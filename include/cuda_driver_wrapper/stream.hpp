@@ -1,6 +1,7 @@
 // ------------------------------------
-// CUDA Stream: GPU に投入する仕事を順序付ける仕組み
-// （ある意味）CPU のスレッドに似ているが，GPU に投入する順序を表すオブジェクト
+// CUDA Stream: GPU に投入する処理の実行順序を決める処理列
+// 同じ stream に投入した処理は，投入順に実行される
+// 別の stream との間で順序付けをする際は，event 等で依存関係を指定する
 // ------------------------------------
 #pragma once
 
@@ -10,13 +11,16 @@
 namespace cuda_driver_wrapper
 {
 
-// ストリームを識別する CUStream と，所属するコンテキストの CUContext を保持する
+// CUstream を一つ所有し，所属する CUcontext は借用する
+// conext は，この Stream の使用・破棄が終わるまで有効に保つこと
+// context の retain / 破棄時の GPU 処理の完了待ちは自動では行わない
+// 同じオブジェクトの使用と close / move / 破棄は，呼び出し側で直列化する
 class Stream final
 {
 public:
     explicit Stream(
         CUcontext context,
-        unsigned int flags = CU_STREAM_NON_BLOCKING,
+        unsigned int flags = CU_STREAM_NON_BLOCKING,    // legacy default stream との暗黙の同期を行わない
         std::source_location location = std::source_location::current()
     );
 

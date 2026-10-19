@@ -22,6 +22,8 @@ add_library(${PROJECT_NAME} STATIC
     src/context.cpp
     src/stream.cpp
     src/event.cpp
+    src/device_memory.cpp
+    src/device_buffer.cpp
 )
 
 add_library(
