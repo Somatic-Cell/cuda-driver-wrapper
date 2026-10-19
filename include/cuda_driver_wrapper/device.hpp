@@ -25,7 +25,7 @@ struct DeviceInfo
 
 
 // cuInit(0) を呼ぶ関数．失敗は CudaError として報告．
-// 個のラッパー自身は初期化済みのフラグを保持しない
+// このラッパー自身は初期化済みのフラグを保持しない
 // コンテキストの作成，保持，current の変更は行わない
 void initialize_driver(
     std::source_location location = std::source_location::current()
@@ -56,7 +56,7 @@ int get_device_attribute(
     std::source_location location = std::source_location::current()
 );
 
-// 名前，総メモリ用，基本的な計算能力をまとめて問い合わせる関数
+// 名前，総メモリ量，基本的な計算能力をまとめて問い合わせる関数
 // クエリが一部失敗した場合，不完全な DeviceInfo は返さない
 [[nodiscard]]
 DeviceInfo get_device_info(

@@ -62,7 +62,7 @@ Stream& Stream::operator=(Stream&& other)
 {
     if(this != &other)
     {
-        close(); // 自分のリソースを開放．失敗したら other の所有権は自分に移さない
+        close(); // 自分のリソースを解放．失敗したら other の所有権は自分に移さない
         context_ = std::exchange(other.context_, nullptr);
         stream_ = std::exchange(other.stream_, nullptr);
     }

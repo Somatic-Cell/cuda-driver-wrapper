@@ -18,7 +18,7 @@ void require_event(const Event& event)
 {
     if(!event.is_valid())
     {
-        throw std::logic_error("Event is closed ro moved-from");
+        throw std::logic_error("Event is closed or moved-from");
     }
 }
 

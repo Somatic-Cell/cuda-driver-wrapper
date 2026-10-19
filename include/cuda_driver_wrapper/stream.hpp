@@ -32,8 +32,7 @@ public:
 
     // ムーブ
     // このクラスは CUDA のストリームを作り直したり，
-    // 別の GPU はコンテキストに移動したりしないため，
-    // ムーブを許す
+    // 別の GPU やコンテキストに移動したりしないため，ムーブを許す
     Stream(Stream&& other) noexcept;
     Stream& operator=(Stream&& other);      // 古い stream の close が失敗する可能性を考え，ムーブ代入は noexcept にしない
 
@@ -60,11 +59,11 @@ void synchronize_stream(
 );
 
 // CUDA_SUCCESS なら true, CUDA_ERROR_NOT_READY なら false
-// その他の CUA Error はCudaError として送出
+// その他の CUDA Error はCudaError として送出
 // close / move 後の空の stream は拒否
 [[nodiscard]] bool is_stream_ready(
     const Stream& stream,
     std::source_location location = std::source_location::current()
 );
 
-} // namespace cuda_driver_pointer
+} // namespace cuda_driver_wrapper

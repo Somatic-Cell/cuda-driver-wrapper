@@ -111,7 +111,7 @@ ScopedCurrentContext::~ScopedCurrentContext() noexcept
 
     if(std::this_thread::get_id() != thread_id_)
     {
-        report_context_contract_failure("scope destroyed on a different thread; context was not stopped");
+        report_context_contract_failure("scope destroyed on a different thread; context was not popped");
         return;
     }
 
