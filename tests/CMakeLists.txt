@@ -175,3 +175,5 @@ set_tests_properties(cuda_driver_wrapper.device_buffer
         LABELS "gpu;cuda_driver;memory"
         SKIP_RETURN_CODE 77
 )
+
+add_subdirectory(module)

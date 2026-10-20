@@ -59,7 +59,7 @@ private:
 };
 
 // コンテキストを現在の CPU スレッドから操作できる状態に一時的に設定するクラス
-// 有効な CUcontext を借用し，構築時に一度 push, 復元時に一度 pop する
+// 有効な CUcontext を借用し，構築時に current context のスタックへ一度 push, 復元時に一度 pop する
 // push, pop の間で例外が発生すると，pop が実行されない可能性があるため，RAII を利用する
 // 操作終了後に元の状態に戻す
 class [[nodiscard]] ScopedCurrentContext final
@@ -90,7 +90,7 @@ public:
     bool is_active() const noexcept {return active_; }
 
 private:
-    CUcontext context_;             // 
+    CUcontext context_;             // current context
     std::thread::id thread_id_;     // current context は CPU スレッドごとの状態なので，構築したスレッド ID を記録しておく
     bool active_ = false;
 };

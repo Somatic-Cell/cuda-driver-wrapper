@@ -24,12 +24,22 @@ add_library(${PROJECT_NAME} STATIC
     src/event.cpp
     src/device_memory.cpp
     src/device_buffer.cpp
+    src/read_binary_file.cpp
+    src/module.cpp
+    src/kernel.cpp
 )
 
 add_library(
     cuda_driver_wrapper::cuda_driver_wrapper
     ALIAS ${PROJECT_NAME}
 )
+
+if(MSVC)
+    set_target_properties(${PROJECT_NAME}
+        PROPERTIES
+            COMPILE_PDB_NAME "${PROJECT_NAME}"
+    )
+endif()
 
 # このプロジェクトは C++20 の機能を使うため，利用側にも伝える
 target_compile_features(${PROJECT_NAME} PUBLIC
@@ -71,7 +81,18 @@ option(CUDA_DRIVER_WRAPPER_BUILD_TESTS
     ${PROJECT_IS_TOP_LEVEL}
 )
 
+
 if(CUDA_DRIVER_WRAPPER_BUILD_TESTS)
+    option(
+        CUDA_DRIVER_WRAPPER_BUILD_KERNEL_TESTS
+        "Build kernel tests requiring NVIDIA nvcc"
+        ON
+    )
+
+    if(CUDA_DRIVER_WRAPPER_BUILD_KERNEL_TESTS)
+        enable_language(CUDA)
+    endif()
+
     enable_testing()
     add_subdirectory(tests)
 endif()

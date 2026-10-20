@@ -14,22 +14,23 @@ class Stream;
 // ホスト側で使う，デバイスメモリの記述子
 // ホスト側の処理が，GPU 上のどの範囲を使うかを伝えるための記述子
 // 単位は全て Byte
-// context とメモリの寿命は延長しない． data を CPU で参照してはいけない
-// 外部のメモリも記述できるが，所属している context 
+// context とメモリの寿命は延長しない． data をホスト側のポインタとして間接参照してはいけない
+// 外部のメモリも記述できる
+// context, アドレス，範囲が実際の allocation と整合することは，呼び出し側が保証する
 // この API で扱うのは同一の context 内の通常の linear デバイスメモリ
 // Managed memory, peer copy, stream-ordered allocation の管理は対象外
 struct ConstDeviceMemoryView
 {
     CUcontext context = nullptr;    // 所属コンテキストの借用ハンドル
     CUdeviceptr data = 0;           // デバイスアドレス
-    std::size_t size_bytes = 0;     // 確保したバイト数
+    std::size_t size_bytes = 0;     // この view が表す範囲のバイト数
 };
 
 struct DeviceMemoryView
 {
     CUcontext context = nullptr;    // 所属コンテキストの借用ハンドル
     CUdeviceptr data = 0;           // デバイスアドレス
-    std::size_t size_bytes = 0;     // 確保したバイト数
+    std::size_t size_bytes = 0;     // この view が表す範囲のバイト数
 
     // 書き込み可能な view は，読み取り元としても使える．逆方向に暗黙の変換はしない
     // CUdevicePtr 自体に const 性はないため，生の API まで保護する仕組みではない
@@ -82,6 +83,8 @@ void copy_device_to_host(
 
 // GPU -> GPU
 // 指定した stream にコピー処理を投入．呼び出し内では完了待ちしない
+// 転送元と転送先のバイト数は一致させる
+// 範囲外のコピーは何もしない．それ以外の重なりは拒否する
 // 両方の view と stream は同じ context
 void copy_device_to_device_async(
     DeviceMemoryView destination,
@@ -90,7 +93,8 @@ void copy_device_to_device_async(
     std::source_location location = std::source_location::current()
 );
 
-// GPU 目盛の各バイトを value の値にする
+// GPU メモリの各バイトを value にする
+// 型付きの要素の値を代入する操作ではない
 // 指定した stream に処理を投入．呼び出し内では完了待ちしない
 void fill_device_bytes_async(
     DeviceMemoryView destination,
