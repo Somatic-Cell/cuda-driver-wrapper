@@ -187,9 +187,26 @@ void test_allocation_and_move(const CUcontext context)
         require(source.size_bytes() == 257 && source.context() == context, "Wrong allocation metadata");
         {
             cdw::ScopedCurrentContext current(context);
-            unsigned int flags = 1;
-            cdw::check_cuda(cuMemHostGetFlags(&flags, source.bytes().data()), "cuMemHostGetFlags (test)");
-            require(flags == 0, "PinnedHostBuffer must allocate with flags=0");
+
+            unsigned int flags = 0xFFFFFFFFu;
+
+            cdw::check_cuda(
+                cuMemHostGetFlags(&flags, source.bytes().data()),
+                "cuMemHostGetFlags (test)"
+            );
+
+            std::cout
+                << "Pinned allocation flags: 0x"
+                << std::hex << flags << std::dec << '\n';
+
+            // UVA 対応環境での device mapping を許容する。
+            // Portable と write-combined は今回の実装では要求していない。
+            constexpr unsigned int allowed_flags = CU_MEMHOSTALLOC_DEVICEMAP;
+
+            require(
+                (flags & ~allowed_flags) == 0,
+                "PinnedHostBuffer has unexpected allocation flags"
+            );
         }
         require_current(before);
         fill_pattern(source.bytes(), 19);
