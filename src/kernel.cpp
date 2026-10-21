@@ -12,8 +12,8 @@ namespace cuda_driver_wrapper
 
 Kernel get_kernel
 (
-    const Module& module,
-    const std::string_view name,
+    const Module& module,           // kernel を取り出したいモジュール
+    const std::string_view name,    // モジュール内に宣言された kernel (関数) 名
     std::source_location location
 )
 {
@@ -98,7 +98,7 @@ void launch_kernel(
         location
     );
 
-    current.restore();
+    current.restore(location);
 }
 
 } // namespace cuda_driver_wrapper

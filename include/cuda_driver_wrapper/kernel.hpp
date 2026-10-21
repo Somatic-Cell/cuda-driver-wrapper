@@ -39,11 +39,11 @@ struct LaunchConfig
     unsigned int shared_memory_bytes = 0;
 };
 
-
+// module 内に宣言された name という名前の kernel を取得する
 // name は空文字と埋め込みの NUL を拒否．失敗は CUDA Error も含めて例外で報告
 [[nodiscard]] Kernel get_kernel(
-    const Module& module,
-    std::string_view name,
+    const Module& module,   // kernel を取り出したいモジュール
+    std::string_view name,  // モジュール内に宣言された kernel 名
     std::source_location location = std::source_location::current()
 );
 
@@ -54,7 +54,7 @@ Kernel get_kernel(
     std::source_location = std::source_location::current()
 ) = delete;
 
-// 指定した stream に投入する
+// 指定した stream に kernel を投入する
 // kernel / stream の context は一致させる． 
 // zero dimension は拒否し，デバイス固有の上限や resource の制約は cuLaunchKernel にゆだねる
 

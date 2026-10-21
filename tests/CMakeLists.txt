@@ -177,3 +177,40 @@ set_tests_properties(cuda_driver_wrapper.device_buffer
 )
 
 add_subdirectory(module)
+
+# M0.7: Pinned host memory and asynchronous host transfers
+set(PINNED_HOST_TEST_NAME "cuda_driver_wrapper_pinned_host_buffer_test")
+
+add_executable(${PINNED_HOST_TEST_NAME}
+    pinned_host_buffer_test.cpp
+)
+
+target_link_libraries(${PINNED_HOST_TEST_NAME}
+    PRIVATE cuda_driver_wrapper::cuda_driver_wrapper
+)
+
+set_target_properties(${PINNED_HOST_TEST_NAME}
+    PROPERTIES CXX_EXTENSIONS OFF
+)
+
+if(MSVC)
+    target_compile_options(${PINNED_HOST_TEST_NAME}
+        PRIVATE /W4 /utf-8 /permissive- /Zc:__cplusplus
+    )
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(${PINNED_HOST_TEST_NAME}
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME cuda_driver_wrapper.pinned_host_buffer
+    COMMAND ${PINNED_HOST_TEST_NAME}
+)
+
+set_tests_properties(cuda_driver_wrapper.pinned_host_buffer
+    PROPERTIES
+        LABELS "gpu;cuda_driver;memory;async"
+        SKIP_RETURN_CODE 77
+        TIMEOUT 120
+)

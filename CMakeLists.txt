@@ -27,6 +27,8 @@ add_library(${PROJECT_NAME} STATIC
     src/read_binary_file.cpp
     src/module.cpp
     src/kernel.cpp
+    src/pinned_host_memory.cpp
+    src/pinned_host_buffer.cpp
 )
 
 add_library(
