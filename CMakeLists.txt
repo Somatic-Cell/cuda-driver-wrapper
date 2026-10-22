@@ -29,6 +29,8 @@ add_library(${PROJECT_NAME} STATIC
     src/kernel.cpp
     src/pinned_host_memory.cpp
     src/pinned_host_buffer.cpp
+    src/array_2d_memory.cpp
+    src/array_2d.cpp
 )
 
 add_library(

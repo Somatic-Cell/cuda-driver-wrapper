@@ -49,7 +49,7 @@ struct PinnedHostMemoryView
 // CPU -> GPU
 // サイズは厳密に一致させる．部分転送には subview を使う
 // source の内容変更，開放，および destination の競合アクセス，開放は
-// この転送の完了確認より前に行う
+// この転送の完了確認より後に行う
 void copy_host_to_device_async(
     DeviceMemoryView destination,       // 転送先 (GPU)
     ConstPinnedHostMemoryView source,   // 転送元 (CPU)
