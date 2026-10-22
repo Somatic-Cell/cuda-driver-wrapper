@@ -167,9 +167,10 @@ TextureObject::TextureObject(
     {
         throw std::invalid_argument("LOD clamps be finite and satisfy 0 <= min <= max <= last level");
     }
+    
     CUDA_RESOURCE_DESC resource{};
 
-    resource.resType = CU_RESOURCE_TYPE_ARRAY;
+    resource.resType = CU_RESOURCE_TYPE_MIPMAPPED_ARRAY;
     resource.res.mipmap.hMipmappedArray = source.array;
     auto sampling = make_sampling_descriptor(descriptor.sampling);
     
