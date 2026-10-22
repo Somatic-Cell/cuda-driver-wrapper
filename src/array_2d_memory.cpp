@@ -279,10 +279,10 @@ void copy_host_to_array(
     
     set_destination_array(copy, destination, region);
     
+    // コピーする矩形領域の大きさ
     copy.WidthInBytes = row_bytes;
     copy.Height = region.height;
 
-    // 
     copy_host_and_wait(copy, destination.context, location);
 }
 
@@ -308,6 +308,7 @@ void copy_array_to_host(
     copy.dstHost = destination.data();
     copy.dstPitch = destination_pitch_bytes;
     
+    // コピーする矩形領域の大きさ
     copy.WidthInBytes = row_bytes;
     copy.Height = region.height;
     
@@ -333,12 +334,15 @@ void copy_host_to_array_async(
 
     CUDA_MEMCPY2D copy{};
     
+    // コピー元: host
     copy.srcMemoryType = CU_MEMORYTYPE_HOST;
     copy.srcHost = source.data;
     copy.srcPitch = source_pitch_bytes;
     
+    // コピー元: CUDA array
     set_destination_array(copy, destination, region);
     
+    // コピーする矩形領域の大きさ
     copy.WidthInBytes = row_bytes;
     copy.Height = region.height;
     
@@ -363,6 +367,7 @@ void copy_array_to_host_async(
     if(bytes == 0){ return; }
 
     CUDA_MEMCPY2D copy{};
+    
     // コピー元: CUDA array
     set_source_array(copy, source, region);
 

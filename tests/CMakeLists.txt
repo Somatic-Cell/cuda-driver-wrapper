@@ -251,3 +251,5 @@ set_tests_properties(cuda_driver_wrapper.array_2d
         SKIP_RETURN_CODE 77
         TIMEOUT 120
 )
+
+add_subdirectory(texture)

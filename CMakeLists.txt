@@ -31,6 +31,7 @@ add_library(${PROJECT_NAME} STATIC
     src/pinned_host_buffer.cpp
     src/array_2d_memory.cpp
     src/array_2d.cpp
+    src/texture_object.cpp
 )
 
 add_library(
