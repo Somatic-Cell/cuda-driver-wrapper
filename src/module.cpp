@@ -21,7 +21,7 @@ Module::Module(
     const std::source_location location
 ) : context_(context)
 {
-    // 初期化済みの有効な context ではない場合，例外を送出
+    // context が nullptr なら拒否
     if(context_ == nullptr)
     {
         throw std::invalid_argument("Module requires a non-null context");

@@ -47,7 +47,7 @@ struct LaunchConfig
     std::source_location location = std::source_location::current()
 );
 
-// 一次所有者から寿命の短い借用記述子を取り出す間違いを防ぐ
+// 一時的な Module オブジェクトから寿命の短い借用記述子を取り出す間違いを防ぐ
 Kernel get_kernel(
     const Module&&,
     std::string_view,

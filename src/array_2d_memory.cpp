@@ -272,10 +272,13 @@ void copy_host_to_array(
 
     // ディスクリプタ
     CUDA_MEMCPY2D copy{};
+    
     copy.srcMemoryType = CU_MEMORYTYPE_HOST;    // 転送元は HOST (0x01)
     copy.srcHost = source.data();               // 転送元となる配列の開始アドレス
     copy.srcPitch = source_pitch_bytes;         // 行当たりのバイト数
+    
     set_destination_array(copy, destination, region);
+    
     copy.WidthInBytes = row_bytes;
     copy.Height = region.height;
 
@@ -298,12 +301,16 @@ void copy_array_to_host(
     if(bytes == 0) { return; }
 
     CUDA_MEMCPY2D copy{};
+    
     set_source_array(copy, source, region);
+    
     copy.dstMemoryType = CU_MEMORYTYPE_HOST;
     copy.dstHost = destination.data();
     copy.dstPitch = destination_pitch_bytes;
+    
     copy.WidthInBytes = row_bytes;
     copy.Height = region.height;
+    
     copy_host_and_wait(copy, source.context, location);
 }
 
@@ -325,12 +332,16 @@ void copy_host_to_array_async(
     if(bytes == 0) { return; }
 
     CUDA_MEMCPY2D copy{};
+    
     copy.srcMemoryType = CU_MEMORYTYPE_HOST;
     copy.srcHost = source.data;
     copy.srcPitch = source_pitch_bytes;
+    
     set_destination_array(copy, destination, region);
+    
     copy.WidthInBytes = row_bytes;
     copy.Height = region.height;
+    
     enqueue_host_copy(copy, stream, location);
 }
 
@@ -352,11 +363,18 @@ void copy_array_to_host_async(
     if(bytes == 0){ return; }
 
     CUDA_MEMCPY2D copy{};
-    copy.dstMemoryType = CU_MEMORYTYPE_DEVICE;
+    // コピー元: CUDA array
+    set_source_array(copy, source, region);
+
+    // コピー先: pinned host memory
+    copy.dstMemoryType = CU_MEMORYTYPE_HOST;
     copy.dstHost = destination.data;
     copy.dstPitch = destination_pitch_bytes;
+    
+    // コピーする矩形領域の大きさ
     copy.WidthInBytes = row_bytes;
     copy.Height = region.height;
+
     enqueue_host_copy(copy, stream, location);
 }
 
@@ -378,12 +396,19 @@ void copy_device_to_array_async(
     if(bytes == 0){ return; }
 
     CUDA_MEMCPY2D copy{};
-    copy.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-    copy.dstDevice = source.data;
-    copy.dstPitch = source_pitch_bytes;
+
+    // コピー元: linear memory
+    copy.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+    copy.srcDevice = source.data;
+    copy.srcPitch = source_pitch_bytes;
+    
+    // コピー先: CUDA array
     set_destination_array(copy, destination, region);
+    
+    // コピーする矩形領域の大きさ
     copy.WidthInBytes = row_bytes;
     copy.Height = region.height;
+    
     enqueue_device_copy(copy, stream, location);
 }
 
@@ -405,12 +430,16 @@ void copy_array_to_device_async(
     if(bytes == 0){ return; }
 
     CUDA_MEMCPY2D copy{};
+    
     set_source_array(copy, source, region);
+    
     copy.dstMemoryType = CU_MEMORYTYPE_DEVICE;
     copy.dstDevice = destination.data;
     copy.dstPitch = destination_pitch_bytes;
+    
     copy.WidthInBytes = row_bytes;
     copy.Height = region.height;
+    
     enqueue_device_copy(copy, stream, location);
 }
 

@@ -25,7 +25,7 @@ std::vector<char> read_binary_file(const std::filesystem::path& path)
     const auto utf8 = path.u8string();
     const std::string name(utf8.begin(), utf8.end());
     std::ifstream input(path, std::ios::binary | std::ios::ate); // バイナリで開き，末尾に移動 (at end)
-    if(!input) // ファイルが見つからない
+    if(!input) // ファイルが開けなった
     {
         throw std::runtime_error("Failed to open file: " + name);
     }
@@ -56,7 +56,7 @@ std::vector<char> read_binary_file(const std::filesystem::path& path)
     }
     if(!bytes.empty() && !input.read(bytes.data(), static_cast<std::streamsize>(bytes.size())))
     {
-        throw std::runtime_error("Failed to read the computer file: " + name);
+        throw std::runtime_error("Failed to read the complete file: " + name);
     }
     return bytes;
 }

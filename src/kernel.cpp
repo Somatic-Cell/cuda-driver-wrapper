@@ -48,7 +48,7 @@ void launch_kernel(
     const std::source_location location
 )
 {
-    // Kernel が有効かどうか確認
+    // context と function が null でないことを確認
     if(kernel.context == nullptr || kernel.function == nullptr)
     {
         throw std::invalid_argument("Kernel must contain a context and a function");
@@ -60,13 +60,13 @@ void launch_kernel(
         throw std::logic_error("Stream is closed or moved-from");
     }
     
-    // context が有効かどうか確認
+    // kernel と stream の context が一致することを確認
     if(kernel.context != stream.context())
     {
         throw std::invalid_argument("Kernel and stream must belong to the same context");
     }
     
-    // グリッド・ブロックのサイズが適切かどうかを確認
+    // グリッド・ブロックのサイズが 0 でないことを確認
     if(config.grid_x == 0 || config.grid_y == 0 || config.grid_z == 0 
     || config.block_x == 0 || config.block_y == 0 || config.block_z == 0)
     {
