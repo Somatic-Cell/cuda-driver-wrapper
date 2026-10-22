@@ -1,7 +1,9 @@
 #include <cuda_driver_wrapper/texture_object.hpp>
+#include <cuda_driver_wrapper/mipmapped_array_2d.hpp>
 #include <cuda_driver_wrapper/context.hpp>
 #include <cuda_driver_wrapper/error.hpp>
 
+#include <cmath>
 #include <cstdio>
 #include <exception>
 #include <stdexcept>
@@ -27,36 +29,24 @@ void validate_address_mode(const CUaddress_mode mode)
     }
 }
 
-// source 先が有効な CUDA array であるかどうかを確認しつつ，
-// descriptor の値や組み合わせに不正がないかどうかを検査する 
-void validate_texture_2d(
-    const ConstArray2DView source,
+void validate_sampling(
+    const Array2DDescriptor& array,
     const Texture2DDescriptor& descriptor
 )
 {
-    // CUDA array が有効かどうかを確認
-    if(source.context == nullptr || source.array == nullptr)
+    if(array.width == 0 || array.height == 0)
     {
-        throw std::invalid_argument("TextureObject requires a non-null context and array");
+        throw std::invalid_argument("TextureObject requires a non-zero 2D array extent");
     }
-
-    if(source.descriptor.width == 0 || source.descriptor.height == 0)
-    {
-        throw std::invalid_argument("TextureObject requires a no-zero 2D array extent");
-    }
-
-    static_cast<void>(texel_size_bytes(
-        source.descriptor.format, source.descriptor.num_channels
-    ));
-
-    // ディスクリプタの値が有効かどうかを確認
+    static_cast<void>(texel_size_bytes(array.format, array.num_channels));
     validate_address_mode(descriptor.address_mode_u);
     validate_address_mode(descriptor.address_mode_v);
-    if( descriptor.filter_mode != CU_TR_FILTER_MODE_POINT &&
-        descriptor.filter_mode != CU_TR_FILTER_MODE_LINEAR
-    ){
+    if(descriptor.filter_mode != CU_TR_FILTER_MODE_POINT && 
+    descriptor.filter_mode != CU_TR_FILTER_MODE_LINEAR)
+    {
         throw std::invalid_argument("2D texture filtering must be point or linear");
     }
+
 
     // ディスクリプタの組み合わせが有効かどうかを確認
     // 非正規化テクスチャとして使う場合，クランプを許さない
@@ -73,7 +63,7 @@ void validate_texture_2d(
     if(descriptor.read_as_integer)
     {
         // UINT8 以外の整数読み出しを許さない
-        if(source.descriptor.format != CU_AD_FORMAT_UNSIGNED_INT8)
+        if(array.format != CU_AD_FORMAT_UNSIGNED_INT8)
         {
             throw std::invalid_argument("Integer reads require a UINT8 array");
         }
@@ -87,6 +77,28 @@ void validate_texture_2d(
 
 }
 
+CUDA_TEXTURE_DESC make_sampling_descriptor(const Texture2DDescriptor& descriptor)
+{
+    CUDA_TEXTURE_DESC sampling{};
+    sampling.addressMode[0] = descriptor.address_mode_u;
+    sampling.addressMode[1] = descriptor.address_mode_v;
+    sampling.addressMode[2] = CU_TR_ADDRESS_MODE_CLAMP;
+    sampling.filterMode = descriptor.filter_mode;
+
+    if(descriptor.normalized_coordinates)
+    {
+        sampling.flags |= CU_TRSF_NORMALIZED_COORDINATES;
+    }
+    if(descriptor.read_as_integer)
+    {
+        sampling.flags |= CU_TRSF_READ_AS_INTEGER;
+    }
+    sampling.maxAnisotropy = 1;
+    sampling.mipmapFilterMode = CU_TR_FILTER_MODE_POINT;
+    
+    return sampling;
+}
+
 } // namespace 
 
 
@@ -96,37 +108,91 @@ TextureObject::TextureObject(
     const std::source_location location
 ) : context_(source.context)
 {
-    validate_texture_2d(source, descriptor);
+    if(source.context == nullptr || source.array == nullptr)
+    {
+        throw std::invalid_argument("TextureObject requires a non-null context and array");
+    }
 
+    validate_sampling(source.descriptor, descriptor);
     CUDA_RESOURCE_DESC resource{};
 
     resource.resType = CU_RESOURCE_TYPE_ARRAY;
     resource.res.array.hArray = source.array;
     
-    // resource.flags は 0 のまま
+    create(resource, make_sampling_descriptor(descriptor), location);
+}
 
-    CUDA_TEXTURE_DESC sampling{};
-    sampling.addressMode[0] = descriptor.address_mode_u;
-    sampling.addressMode[1] = descriptor.address_mode_v;
-    sampling.addressMode[2] = CU_TR_ADDRESS_MODE_CLAMP;
-    sampling.filterMode = descriptor.filter_mode;
+TextureObject::TextureObject(
+    const ConstMipmappedArray2DView source,
+    const MipmappedTexture2DDescriptor descriptor,
+    const std::source_location location
+) : context_(source.context)
+{
+    if(source.context == nullptr || source.array == nullptr)
+    {
+        throw std::invalid_argument("TextureObject requires a non-null context and mipmapped array");
+    }
+
+    validate_sampling(source.base_descriptor, descriptor.sampling);
+    const auto maximum = full_mip_level_count(
+        source.base_descriptor.width, source.base_descriptor.height
+    );
+
+    if(source.level_count == 0 || source.level_count > maximum)
+    {
+        throw std::invalid_argument("Invalid mip level count in texture source view");
+    }
+
+    if(!descriptor.sampling.normalized_coordinates)
+    {
+        throw std::invalid_argument("Mipmapped textures require normalized contexts");
+    }
+
+    if(descriptor.mipmap_filter_mode != CU_TR_FILTER_MODE_POINT && 
+    descriptor.mipmap_filter_mode != CU_TR_FILTER_MODE_LINEAR)
+    {
+        throw std::invalid_argument("Mipmap flitering must be point or linear");
+    }
+
+    if(descriptor.sampling.read_as_integer && descriptor.mipmap_filter_mode != CU_TR_FILTER_MODE_POINT)
+    {
+        throw std::invalid_argument("Integer mipmapped texture reads require  point mipmap filtering");
+    }
+
+    const float last_lod = static_cast<float>(source.level_count - 1);
+    const float min_lod = descriptor.min_lod;
+    const float max_lod = descriptor.max_lod.value_or(last_lod);
+
+    if(!std::isfinite(min_lod) || !std::isfinite(max_lod) || min_lod < 0.0f || max_lod < min_lod || max_lod > last_lod)
+    {
+        throw std::invalid_argument("LOD clamps be finite and satisfy 0 <= min <= max <= last level");
+    }
+    CUDA_RESOURCE_DESC resource{};
+
+    resource.resType = CU_RESOURCE_TYPE_ARRAY;
+    resource.res.mipmap.hMipmappedArray = source.array;
+    auto sampling = make_sampling_descriptor(descriptor.sampling);
     
-    if(descriptor.normalized_coordinates)
+    sampling.mipmapFilterMode = descriptor.mipmap_filter_mode;
+    sampling.minMipmapLevelClamp = min_lod;
+    sampling.maxMipmapLevelClamp = max_lod;
+    if(descriptor.disable_trilinear_optimization)
     {
-        sampling.flags |= CU_TRSF_NORMALIZED_COORDINATES;
-    }
-    if(descriptor.read_as_integer)
-    {
-        sampling.flags |= CU_TRSF_READ_AS_INTEGER;
+        sampling.flags |= CU_TRSF_DISABLE_TRILINEAR_OPTIMIZATION;
     }
 
-    // mipmap の bias clamp, borderColor は全て 0
-    sampling.maxAnisotropy = 1;
-    sampling.mipmapFilterMode = CU_TR_FILTER_MODE_POINT;
+    create(resource, sampling, location);
+}
 
-    // TextureObject の作成
+void TextureObject::create(
+    const CUDA_RESOURCE_DESC& resource,
+    const CUDA_TEXTURE_DESC& sampling,
+    const std::source_location location
+)
+{
     ScopedCurrentContext current(context_, location);
     CUtexObject created = 0;
+
     check_cuda(
         cuTexObjectCreate(&created, &resource, &sampling, nullptr),
         "cuTexOjbectCreate", location

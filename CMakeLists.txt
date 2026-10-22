@@ -32,6 +32,7 @@ add_library(${PROJECT_NAME} STATIC
     src/array_2d_memory.cpp
     src/array_2d.cpp
     src/texture_object.cpp
+    src/mipmapped_array_2d.cpp
 )
 
 add_library(

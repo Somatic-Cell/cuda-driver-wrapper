@@ -2,10 +2,12 @@
 
 #include <cuda_driver_wrapper/array_2d_memory.hpp>
 
+#include <optional>
 #include <source_location>
 
 namespace cuda_driver_wrapper
 {
+struct ConstMipmappedArray2DView;
 
 // 2D array を読むためのディスクリプタ
 struct Texture2DDescriptor
@@ -24,6 +26,19 @@ struct Texture2DDescriptor
     bool read_as_integer = false;
 };
 
+struct MipmappedTexture2DDescriptor
+{
+    Texture2DDescriptor sampling{};
+    CUfilter_mode mipmap_filter_mode = CU_TR_FILTER_MODE_POINT;
+    float min_lod = 0.0f;
+
+    // 未指定なら確保した最後のレベルとする
+    std::optional<float> max_lod = std::nullopt;
+
+    // 近似的な trilinear interpolation をデフォルトで無効にする
+    bool disable_trilinear_optimization = true;
+};
+
 // CUtexObject を所有する
 // CUarray, CUcontext は借用する
 // 構築時にテクスチャの転送，複製， context の retain, GPU の同期を行わない
@@ -34,6 +49,12 @@ public:
     explicit TextureObject(
         ConstArray2DView source,
         Texture2DDescriptor descriptor = {},
+        std::source_location location = std::source_location::current()
+    );
+
+    TextureObject(
+        ConstMipmappedArray2DView source,
+        MipmappedTexture2DDescriptor descriptor = {},
         std::source_location location = std::source_location::current()
     );
 
@@ -57,6 +78,11 @@ public:
     [[nodiscard]] bool is_valid() const noexcept { return texture_ != 0; }
 
 private:
+    void create(
+        const CUDA_RESOURCE_DESC& resource,
+        const CUDA_TEXTURE_DESC& sampling,
+        std::source_location location
+    );
     void close_noexcept() noexcept;
 
     CUcontext context_ = nullptr;   // 借用する

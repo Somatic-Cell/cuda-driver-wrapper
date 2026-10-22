@@ -253,3 +253,5 @@ set_tests_properties(cuda_driver_wrapper.array_2d
 )
 
 add_subdirectory(texture)
+
+add_subdirectory(mipmap)
