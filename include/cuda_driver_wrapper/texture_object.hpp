@@ -52,7 +52,7 @@ public:
         std::source_location location = std::source_location::current()
     );
 
-    TextureObject(
+    explicit TextureObject(
         ConstMipmappedArray2DView source,
         MipmappedTexture2DDescriptor descriptor = {},
         std::source_location location = std::source_location::current()

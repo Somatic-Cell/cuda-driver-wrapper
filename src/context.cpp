@@ -102,7 +102,6 @@ void ScopedCurrentContext::restore(
         location
     );
 
-    // pop したので current context はもう context_ ではない
     active_ = false;
 
     // pop した context と context_ は一致するはずなので，チェック

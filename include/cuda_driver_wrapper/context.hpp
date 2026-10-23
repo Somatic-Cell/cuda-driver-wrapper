@@ -90,9 +90,9 @@ public:
     bool is_active() const noexcept {return active_; }
 
 private:
-    CUcontext context_;             // current context
-    std::thread::id thread_id_;     // current context は CPU スレッドごとの状態なので，構築したスレッド ID を記録しておく
-    bool active_ = false;
+    CUcontext context_;             // スコープが push した context に対する借用ハンドル
+    std::thread::id thread_id_;     // 構築したスレッド ID  (current context は CPU スレッドごとの状態)
+    bool active_ = false;           // 対応する pop はまだ必要か
 };
 
 

@@ -21,6 +21,11 @@ Array2D::Array2D(
         throw std::invalid_argument("Array2D requires a non-null context");
     }
 
+    if(descriptor_.height == 0)
+    {
+        throw std::invalid_argument("Array2D height must be non-zero");
+    }
+
     static_cast<void>(row_size_bytes(descriptor_));
 
     CUDA_ARRAY_DESCRIPTOR allocation{};

@@ -35,9 +35,9 @@ std::size_t row_size_bytes(
 )
 {
     // テクセル数の不正を検出
-    if(descriptor.width == 0 || descriptor.height == 0)
+    if(descriptor.width == 0)
     {
-        throw std::invalid_argument("Array2D width and height must both be non-zero");
+        throw std::invalid_argument("Array2D width must both be non-zero");
     }
 
     // 1 テクセル当たりのバイト数
@@ -88,11 +88,19 @@ void require_array(const ConstArray2DView view)
     {
         throw std::invalid_argument("Array2D view requires a valid context and array");
     }
+
+    if(view.descriptor.height == 0)
+    {
+        throw std::invalid_argument(
+            "Array2D view height must be non-zero"
+        );
+    }
+
     static_cast<void>(row_size_bytes(view.descriptor));
 }
 
 // コピーしたい領域が有効であるかどうかを確認
-std::size_t validate_array_region(
+void validate_array_region(
     const ConstArray2DView view,    // コピー元
     const ArrayRegion2D region      // 上記のコピー元のうち，コピー対象としたい領域
 )
@@ -106,10 +114,6 @@ std::size_t validate_array_region(
         throw std::out_of_range("Array2D region is outside the supplied array extent");
     }
 
-    // 一行当たりのバイト数を計算して返す
-    return checked_byte_size(
-        region.width, texel_size_bytes(view.descriptor.format, view.descriptor.num_channels)
-    );
 }
 
 // コピーが要求するバイト数を，利用可能なバイト数が満たしているかどうかをチェックする
@@ -263,7 +267,11 @@ void copy_host_to_array(
     const std::source_location location
 )
 {
-    const auto row_bytes = validate_array_region(destination, region);
+    validate_array_region(destination, region);
+    const auto row_bytes = checked_byte_size(
+        region.width, 
+        texel_size_bytes(destination.descriptor.format, destination.descriptor.num_channels)
+    );
     const auto bytes = required_2d_bytes(row_bytes, region.height, source_pitch_bytes);
     
     // 
@@ -295,7 +303,11 @@ void copy_array_to_host(
     const std::source_location location
 )
 {
-    const auto row_bytes = validate_array_region(source, region);
+    validate_array_region(source, region);
+    const auto row_bytes = checked_byte_size(
+        region.width, 
+        texel_size_bytes(source.descriptor.format, source.descriptor.num_channels)
+    );
     const auto bytes = required_2d_bytes(row_bytes, region.height, destination_pitch_bytes);
     require_capacity(destination.size_bytes(), bytes);
     if(bytes == 0) { return; }
@@ -324,7 +336,11 @@ void copy_host_to_array_async(
     const std::source_location location
 )
 {
-    const auto row_bytes = validate_array_region(destination, region);
+    validate_array_region(destination, region);
+    const auto row_bytes = checked_byte_size(
+        region.width, 
+        texel_size_bytes(destination.descriptor.format, destination.descriptor.num_channels)
+    );
     static_cast<void>(subview(source, 0, source.size_bytes));
     require_stream_context(stream, destination.context);
     require_stream_context(stream, source.context);
@@ -358,7 +374,11 @@ void copy_array_to_host_async(
     const std::source_location location
 )
 {
-    const auto row_bytes = validate_array_region(source, region);
+    validate_array_region(source, region);
+    const auto row_bytes = checked_byte_size(
+        region.width, 
+        texel_size_bytes(source.descriptor.format, source.descriptor.num_channels)
+    );
     static_cast<void>(subview(destination, 0, destination.size_bytes));
     require_stream_context(stream, source.context);
     require_stream_context(stream, destination.context);
@@ -392,7 +412,11 @@ void copy_device_to_array_async(
     const std::source_location location
 )
 {
-    const auto row_bytes = validate_array_region(destination, region);
+    validate_array_region(destination, region);
+    const auto row_bytes = checked_byte_size(
+        region.width, 
+        texel_size_bytes(destination.descriptor.format, destination.descriptor.num_channels)
+    );
     static_cast<void>(subview(source, 0, source.size_bytes));
     require_stream_context(stream, destination.context);
     require_stream_context(stream, source.context);
@@ -426,7 +450,11 @@ void copy_array_to_device_async(
     const std::source_location location
 )
 {
-    const auto row_bytes = validate_array_region(source, region);
+    validate_array_region(source, region);
+    const auto row_bytes = checked_byte_size(
+        region.width, 
+        texel_size_bytes(source.descriptor.format, source.descriptor.num_channels)
+    );
     static_cast<void>(subview(destination, 0, destination.size_bytes));
     require_stream_context(stream, source.context);
     require_stream_context(stream, destination.context);
@@ -457,7 +485,11 @@ void copy_array_to_array_async(
     const std::source_location location
 )
 {
-    const auto row_bytes = validate_array_region(destination, destination_region);
+    validate_array_region(destination, destination_region);
+    const auto row_bytes = checked_byte_size(
+        destination_region.width, 
+        texel_size_bytes(destination.descriptor.format, destination.descriptor.num_channels)
+    );
     static_cast<void>(validate_array_region(source, source_region));
     require_stream_context(stream, destination.context);
     require_stream_context(stream, source.context);
