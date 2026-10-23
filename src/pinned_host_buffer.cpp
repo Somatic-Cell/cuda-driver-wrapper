@@ -66,7 +66,7 @@ PinnedHostBuffer& PinnedHostBuffer::operator=(PinnedHostBuffer&& other)
         // 自身の要素を解放する
         close();
 
-        // other を解放しつつ，自身の要素とする
+        // other の所有権を引き継いで，other は空にする
         context_ = std::exchange(other.context_, nullptr);
         data_ = std::exchange(other.data_, nullptr);
         size_bytes_ = std::exchange(other.size_bytes_, 0);

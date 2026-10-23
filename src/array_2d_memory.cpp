@@ -25,7 +25,7 @@ std::size_t texel_size_bytes(
     {
         case CU_AD_FORMAT_UNSIGNED_INT8: return num_channels;   // uint8 は 1 チャネル 1 バイト
         case CU_AD_FORMAT_FLOAT: return 4u * num_channels;      // float は 1 チャネル 4 バイト
-        default: throw std::invalid_argument("This API supports only UIN8 and FLOAT array components");
+        default: throw std::invalid_argument("This API supports only UINT8 and FLOAT array components");
     }
 }
 
@@ -139,7 +139,7 @@ void require_stream_context(
     // コンテキストが，stream の所属するコンテキストと一致するかどうかを確認
     if(context != nullptr && context != stream.context())
     {
-        throw std::invalid_argument("2D transfer resources and stream must ust the same context");
+        throw std::invalid_argument("2D transfer resources and stream must use the same context");
     }
 
 }
@@ -210,8 +210,8 @@ void enqueue_host_copy(
     current.restore(location);
 }
 
-// liner memory -> array 
-// array -> liner memory
+// linear memory -> array 
+// array -> linear memory
 // array -> array
 void enqueue_device_copy(
     const CUDA_MEMCPY2D& copy, 
@@ -339,7 +339,7 @@ void copy_host_to_array_async(
     copy.srcHost = source.data;
     copy.srcPitch = source_pitch_bytes;
     
-    // コピー元: CUDA array
+    // コピー先: CUDA array
     set_destination_array(copy, destination, region);
     
     // コピーする矩形領域の大きさ

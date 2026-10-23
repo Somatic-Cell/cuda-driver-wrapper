@@ -84,7 +84,7 @@ void copy_device_to_host(
 // GPU -> GPU
 // 指定した stream にコピー処理を投入．呼び出し内では完了待ちしない
 // 転送元と転送先のバイト数は一致させる
-// 範囲外のコピーは何もしない．それ以外の重なりは拒否する
+// 同じ範囲へのコピーは何もしない．それ以外の重なりは拒否する
 // 両方の view と stream は同じ context
 void copy_device_to_device_async(
     DeviceMemoryView destination,

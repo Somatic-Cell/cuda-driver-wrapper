@@ -49,7 +49,7 @@ void validate_sampling(
 
 
     // ディスクリプタの組み合わせが有効かどうかを確認
-    // 非正規化テクスチャとして使う場合，クランプを許さない
+    // 非正規化テクスチャとして使う場合，クランプのみ許可
     if(
         !descriptor.normalized_coordinates &&
         (   descriptor.address_mode_u != CU_TR_ADDRESS_MODE_CLAMP ||

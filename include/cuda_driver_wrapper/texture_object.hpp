@@ -71,7 +71,7 @@ public:
     void close(std::source_location location = std::source_location::current());
 
     // 借用のためのハンドル
-    // 呼び出し側からは destroy できない
+    // 呼び出し側からは destroy してはいけない
     // tex2D<T> の T は array の成分数と read_as_integer との指定に合わせる
     [[nodiscard]] CUtexObject handle() const noexcept { return texture_; }
     [[nodiscard]] CUcontext context() const noexcept { return context_; }
